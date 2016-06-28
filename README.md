@@ -10,7 +10,7 @@ gem 'misoca_ruby_client'
 
 And then execute:
 
-    $ bundle
+    $ bundle instal
 
 Or install it yourself as:
 
@@ -18,29 +18,32 @@ Or install it yourself as:
 
 ## Usage
 
-Because misoca's refresh token live quite a long time. You can save your token somewhere and constantly refresh the token(e.g. Cron) so you don't have to do oath everytime.
-```
+Because misoca's refresh token live quite a long time. You can save your token somewhere and constantly refresh the token(e.g. Cron) so you don't have to authorize everytime.
+```ruby
 # Create a proc so that we can save the token to somewhere
-update_config = Proc.new { |access_token| 
+update_config = proc { |access_token| 
 	SomeModelToSaveToken.update_columns(misoca_access_token: access_token.token, misoca_refresh_token: access_token.refresh_token)
 }
+
 # Initialize client
 mymisoca = MisocaRubyClient.new(application_id, secret, callback_url, update_config)
+
 # Inject a saved token so that you can skip authentication
 mymisoca.inject_access_token(misoca_access_token, misoca_refresh_token) if misoca_access_token && misoca_refresh_token
 ```
 Then you can have a cron which do
-```
+```ruby
 mymisoca.refresh_access_token
 ```
 at least once everyday.
 
 You can also choose not using `update_config`. For this, you need a callback controller which do.
-```
+```ruby
 class OauthController < ApplicationController
   def misoca_authorization
     return redirect_to mymisoca.get_authorize_url
   end
+
   def misoca_callback
     mymisoca.exchange_token(params[:code])
     return redirect_to "/configs"
@@ -50,7 +53,7 @@ end
 Note that `misoca_authorization` redirect you to Misoca's oauth page. `misoca_callback` is the callback which receive `params[:code]` and update access token.
 
 Create an invoice
-```
+```ruby
 invoice = {
   issue_date: Date.today,
   payment_due_on: Date.today,
